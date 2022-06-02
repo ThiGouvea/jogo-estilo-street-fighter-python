@@ -54,8 +54,8 @@ def draw_health_bar(health, x, y):
 
 
 # cria duas instancias de lutadores
-fighter_1 = Fighter(200, 310, WARRIOR_DATA, warrior_sheet, WARRIOR_ANIMATION_STEPS)
-fighter_2 = Fighter(700, 310, WIZARD_DATA, wizard_sheet, WIZARD_ANIMATION_STEPS)
+fighter_1 = Fighter(200, 310, False, WARRIOR_DATA, warrior_sheet, WARRIOR_ANIMATION_STEPS)
+fighter_2 = Fighter(700, 310, True, WIZARD_DATA, wizard_sheet, WIZARD_ANIMATION_STEPS)
 
 # loop do jogo
 run = True
@@ -72,6 +72,10 @@ while run:
 
     # movimenta lutadores
     fighter_1.move(SCREEN_WIDTH, SCREEN_HEIGHT, screen, fighter_2)
+
+    # faz update da animação dos lutadores
+    fighter_1.update()
+    fighter_2.update()
 
     # desenha os lutadores na tela
     fighter_1.draw(screen)

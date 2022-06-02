@@ -2,21 +2,25 @@ import pygame
 
 
 class Fighter():
-    def __init__(self, x, y, data, sprite_sheet, animation_steps):
+    def __init__(self, x, y, flip, data, sprite_sheet, animation_steps):
         self.size = data[0]
         self.image_scale = data[1]
         self.offset = data[2]
-        self.flip = False
+        self.flip = flip
         self.animation_list = self.load_images(sprite_sheet, animation_steps)
         self.action = 0 #0:parado, 1:correr, 2:pular, 3:ataque1, 4:ataque2, 5:acert0, 6:morte
         self.frame_index = 0
         self.image = self.animation_list[self.action][self.frame_index]
+        self.update_time = pygame.time.get_ticks()
         self.rect = pygame.Rect((x, y, 80, 180))
         self.vel_y = 0
+        self.running = False
         self.jump = False
         self.attacking = False
         self.attack_type = 0
+        self.attack_cooldown
         self.health = 100
+
 
     def load_images(self, sprite_sheet, animation_steps):
         # extrai as imagens da lista de animação
@@ -34,6 +38,8 @@ class Fighter():
         GRAVITY = 2
         dx = 0
         dy = 0
+        self.running = False
+        self.attack_type = 0
 
         # aceita o pressionamento de teclas
         key = pygame.key.get_pressed()
@@ -43,8 +49,10 @@ class Fighter():
             # movimento
             if key[pygame.K_a]:
                 dx = -SPEED
+                self.running = True
             if key[pygame.K_d]:
                 dx = SPEED
+                self.running = True
             # pulo
             if key[pygame.K_w] and self.jump == False:
                 self.vel_y = -30
@@ -83,14 +91,55 @@ class Fighter():
         self.rect.y += dy
 
 
+    # lida com updates de animação
+    def update(self):
+        # checa qual ação o jogador esta fazendo
+        if self.attacking == True:
+            if self.attack_type == 1:
+                self.update_action(3) # 3:ataque1
+            elif self.attack_type == 2:
+                self.update_action(4) # 4:ataque2
+        elif self.jump == True:
+            self.update_action(2) # 2:pulando
+        elif self.running == True:
+            self.update_action(1) # 1:correndo
+        else:
+            self.update_action(0) # 0:parado
+
+        animation_cooldown = 50
+        # faz update da imagem
+        self.image = self.animation_list[self.action][self.frame_index]
+        # checa se tempo o suficiente passou desde o ultimo update
+        if pygame.time.get_ticks() - self.update_time > animation_cooldown:
+            self.frame_index += 1
+            self.update_time = pygame.time.get_ticks()
+        # checa pra ver se a animação terminou
+        if self.frame_index >= len(self.animation_list[self.action]):
+            self.frame_index = 0
+            # checa se um ataque foi executado
+            if self.action == 3 or self.action ==4:
+                self.attacking = False
+
+
     def attack(self, surface, target):
         self.attacking = True
         attacking_rect = pygame.Rect(self.rect.centerx - (2 * self.rect.width * self.flip), self.rect.y, 2 * self.rect.width, self.rect.height)
         if attacking_rect.colliderect(target.rect):
             target.health -= 10
 
+
         pygame.draw.rect(surface, (0, 255, 0), attacking_rect)
 
+
+    def update_action(self, new_action):
+        # checa se a nova ação é diferente da anterior
+        if new_action != self.action:
+            self.action = new_action
+            # faz update das configurações da animação sendo usada
+            self.frame_index = 0
+            self.update_time = pygame.time.get_ticks()
+
     def draw(self, surface):
+        img = pygame.transform.flip(self.image, self.flip, False)
         pygame.draw.rect(surface, (255, 0, 0), self.rect)
-        surface.blit(self.image, (self.rect.x - (self.offset[0] * self.image_scale), self.rect.y - (self.offset[1] * self.image_scale)))
+        surface.blit(img, (self.rect.x - (self.offset[0] * self.image_scale), self.rect.y - (self.offset[1] * self.image_scale)))
